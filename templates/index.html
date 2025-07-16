@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Insurance Cost Predictor</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #1f1f1f;
+      color: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      background: #fff;
+      padding: 30px 40px;
+      border-radius: 10px;
+      max-width: 900px;
+      width: 100%;
+    }
+
+    .page-title {
+      background: linear-gradient(90deg, #4e342e, #6d4c41); /* Brown gradient */
+      color: #fff;
+      font-size: 32px;
+      text-align: center;
+      padding: 15px 0;
+      margin-bottom: 30px;
+      font-weight: bold;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    }
+
+    form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    label {
+      font-weight: bold;
+    }
+
+    input {
+      width: 100%;
+      padding: 8px;
+      margin-top: 4px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    .full-width {
+      grid-column: span 2;
+      text-align: center;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      background-color: #1976f2;
+      color: #fff;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      background-color: #0f5dd0;
+    }
+
+    .error {
+      color: red;
+      font-size: 0.9em;
+      grid-column: span 2;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2 class="page-title">Insurance Cost Predictor</h2>
+
+    <!-- Form wrapper to toggle -->
+    <div id="form-wrapper">
+      <form id="insurance-form" action="/predict" method="post" onsubmit="return validateForm()">
+
+        <div>
+          <label>Years of Insurance With Us:</label>
+          <input type="text" name="years_of_insurance_with_us" maxlength="2" required>
+        </div>
+
+        <div>
+          <label>Had Regular Checkup Last Year? (1 = Yes, 0 = No):</label>
+          <input type="text" name="regular_checkup_last_year" maxlength="1" required>
+        </div>
+
+        <div>
+          <label>Engaged in Adventure Sports? (1 = Yes, 0 = No):</label>
+          <input type="text" name="adventure_sports" maxlength="1" required>
+        </div>
+
+        <div>
+          <label>Daily Average Steps:</label>
+          <input type="text" name="daily_avg_steps" maxlength="4" required>
+        </div>
+
+        <div>
+          <label>Age:</label>
+          <input type="text" name="age" maxlength="3" required>
+        </div>
+
+        <div>
+          <label>Average Glucose Level:</label>
+          <input type="text" name="avg_glucose_level" maxlength="3" required>
+        </div>
+
+        <div>
+          <label>BMI:</label>
+          <input type="text" name="bmi" maxlength="3" required>
+        </div>
+
+        <div>
+          <label>Year Last Admitted:</label>
+          <input type="text" name="Year_last_admitted" maxlength="4" required>
+        </div>
+
+        <div>
+          <label>Weight (kg):</label>
+          <input type="text" name="weight" maxlength="3" required>
+        </div>
+
+        <div>
+          <label>Weight Change in Last One Year (kg):</label>
+          <input type="text" name="weight_change_in_last_one_year" maxlength="3" required>
+        </div>
+
+        <div>
+          <label>Fat Percentage:</label>
+          <input type="text" name="fat_percentage" maxlength="2" required>
+        </div>
+
+        <div>
+          <label>Covered by Any Other Company? (1 = Yes, 0 = No):</label>
+          <input type="text" name="covered_by_any_other_company_Y" maxlength="1" required>
+        </div>
+
+        <div class="full-width">
+          <button class="btn" type="submit">Predict</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Result box -->
+    {% if prediction %}
+      <div id="result-box" class="full-width">
+        <strong>Predicted Insurance Cost: ₹{{ prediction }}</strong><br><br>
+        <button class="btn" onclick="window.location.href='/'">Reset</button>
+      </div>
+    {% endif %}
+
+    <div id="form-error" class="error"></div>
+  </div>
+
+  <script>
+    // Only allow numeric characters
+    document.querySelectorAll("input[type='text']").forEach(input => {
+      input.addEventListener("keypress", function(e) {
+        if (!/[0-9]/.test(e.key)) {
+          e.preventDefault();
+        }
+      });
+    });
+
+    function validateForm() {
+      const form = document.forms["insurance-form"];
+      const errorBox = document.getElementById("form-error");
+
+      const rules = [
+        ["years_of_insurance_with_us", 0, 99],
+        ["regular_checkup_last_year", 0, 1],
+        ["adventure_sports", 0, 1],
+        ["daily_avg_steps", 0, 9999],
+        ["age", 1, 100],
+        ["avg_glucose_level", 70, 300],
+        ["bmi", 0, 300],
+        ["Year_last_admitted", 1900, 2099],
+        ["weight", 0, 300],
+        ["weight_change_in_last_one_year", 0, 100],
+        ["fat_percentage", 0, 99],
+        ["covered_by_any_other_company_Y", 0, 1]
+      ];
+
+      for (const [name, min, max] of rules) {
+        const val = form[name].value.trim();
+        if (!/^\d+$/.test(val)) {
+          errorBox.textContent = `${name.replace(/_/g, ' ')} must be a number.`;
+          return false;
+        }
+        const num = Number(val);
+        if (num < min || num > max) {
+          errorBox.textContent = `${name.replace(/_/g, ' ')} must be between ${min} and ${max}.`;
+          return false;
+        }
+      }
+
+      errorBox.textContent = "";
+      return true;
+    }
+
+    // Hide form if prediction exists
+    window.addEventListener("DOMContentLoaded", () => {
+      const resultBox = document.getElementById("result-box");
+      const formWrapper = document.getElementById("form-wrapper");
+      if (resultBox) {
+        resultBox.style.display = "block";
+        if (formWrapper) formWrapper.style.display = "none";
+      }
+    });
+  </script>
+</body>
+</html>
