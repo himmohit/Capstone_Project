@@ -1,6 +1,9 @@
 from flask import Flask, render_template, request
 import numpy as np
 import joblib
+import csv
+import os
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -30,16 +33,36 @@ def home():
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
-        # Extract all features in correct order
         input_values = []
+        input_data_dict = {}  # for logging
+
         for feature in features_to_use:
             val = float(request.form[feature])
             input_values.append(val)
+            input_data_dict[feature] = val
 
         input_data = np.array([input_values])
 
         # Make prediction
         prediction = model.predict(input_data)[0]
+
+        # === Logging predictions to CSV ===
+        log_file = 'prediction_logs.csv'
+        log_headers = ['timestamp'] + features_to_use + ['predicted_insurance_cost']
+
+        # Write header if file doesn't exist
+        if not os.path.exists(log_file):
+            with open(log_file, mode='w', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerow(log_headers)
+
+        # Prepare row
+        log_row = [datetime.now().strftime("%Y-%m-%d %H:%M:%S")] + [input_data_dict[feat] for feat in features_to_use] + [round(prediction, 2)]
+
+        # Write log row
+        with open(log_file, mode='a', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(log_row)
 
         return render_template('index.html', prediction=round(prediction, 2))
 
